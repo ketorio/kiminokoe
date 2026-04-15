@@ -2,75 +2,299 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация — Караоке</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Хедер в точности как на других страницах */
+        .header {
+            background: #333;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Основной контент */
+        .main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .register-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 30px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.2s, box-shadow 0.2s;
+            background: #fafafa;
+        }
+
+        input:focus {
+            border-color: #333;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.1);
+            background: white;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            accent-color: #333;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            background: #444;
+        }
+
+        .btn:active {
+            background: #222;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+            border: 1px solid #c3e6cb;
+        }
+
+        .footer {
+            background: #ddd;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Адаптация */
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .nav a {
+                margin: 0 10px;
+            }
+            .register-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-<h2>Регистрация</h2>
-
-<form id="registerForm">
-    <div>
-        <label>Имя:</label><br>
-        <input type="text" id="name" placeholder="Ваше имя">
+    <div class="header">
+        <div class="logo">🎤 Караоке</div>
+        <div class="nav">
+            <a href="/index">Главная</a>
+            <a href="/search">Песни</a>
+            <a href="/">Регистрация</a>
+        </div>
     </div>
 
-    <div>
-        <label>Email:</label><br>
-        <input type="email" id="email" placeholder="example@mail.com">
+    <div class="main">
+        <div class="register-card">
+            <h2>Регистрация</h2>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Имя</label>
+                    <input type="text" name="name" id="name" placeholder="Ваше имя" autocomplete="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" id="email" placeholder="example@mail.com" autocomplete="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" name="password" id="password" placeholder="••••••" autocomplete="new-password" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Повторите пароль</label>
+                    <input type="password" name="confirm" id="confirm" placeholder="••••••" autocomplete="new-password" required>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="agree" required>
+                    <label for="agree">Я согласен с правилами использования</label>
+                </div>
+
+                <button type="submit" class="btn">Зарегистрироваться</button>
+            </form>
+
+            <div id="message" class="message"></div>
+            <!-- Ссылка "Войти" убрана -->
+        </div>
     </div>
 
-    <div>
-        <label>Пароль:</label><br>
-        <input type="password" id="password" placeholder="••••••">
+    <div class="footer">
+        Караоке-приложение
     </div>
 
-    <div>
-        <label>Повторить пароль:</label><br>
-        <input type="password" id="confirm" placeholder="••••••">
-    </div>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
 
-    <div>
-        <input type="checkbox" id="agree">
-        <label>Согласен с правилами</label>
-    </div>
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm').value;
+            const agree = document.getElementById('agree').checked;
+            const messageEl = document.getElementById('message');
 
-    <button type="submit">Зарегистрироваться</button>
-</form>
+            messageEl.className = 'message';
+            messageEl.textContent = '';
 
-<p id="message" style="color: green;"></p>
+            if (!name || !email || !password || !confirm) {
+                messageEl.textContent = '⚠️ Заполните все поля';
+                messageEl.classList.add('error');
+                return;
+            }
 
-<script>
-    document.getElementById('registerForm').onsubmit = function(e) {
-        e.preventDefault();
+            if (password !== confirm) {
+                messageEl.textContent = '❌ Пароли не совпадают';
+                messageEl.classList.add('error');
+                return;
+            }
 
-        let name = document.getElementById('name').value;
-        let email = document.getElementById('email').value;
-        let pwd = document.getElementById('password').value;
-        let confirm = document.getElementById('confirm').value;
-        let agree = document.getElementById('agree').checked;
+            if (password.length < 6) {
+                messageEl.textContent = '🔒 Пароль должен содержать минимум 6 символов';
+                messageEl.classList.add('error');
+                return;
+            }
 
-        if (!name || !email || !pwd || !confirm) {
-            alert('Заполните все поля');
-            return;
-        }
+            if (!agree) {
+                messageEl.textContent = '📜 Примите условия';
+                messageEl.classList.add('error');
+                return;
+            }
 
-        if (pwd !== confirm) {
-            alert('Пароли не совпадают');
-            return;
-        }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                messageEl.textContent = '📧 Введите корректный email';
+                messageEl.classList.add('error');
+                return;
+            }
 
-        if (!agree) {
-            alert('Примите условия');
-            return;
-        }
+            // Имитация успешной регистрации
+            messageEl.textContent = `✅ Добро пожаловать, ${name}! Перенаправляем...`;
+            messageEl.classList.add('success');
 
-        // сообщение об успехе
-        document.getElementById('message').innerHTML = '✅ Добро пожаловать, ' + name + '! Перенаправление...';
-
-        // редирект на главную страницу через 1 секунду
-        setTimeout(function() {
-            window.location.href = "index";
-        }, 1000);
-    };
-</script>
+            setTimeout(() => {
+                window.location.href = '/index';
+            }, 1500);
+        });
+    </script>
 </body>
 </html>
