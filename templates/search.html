@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><title>Поиск песен</title>
+    <style>
+        body{font-family:Arial;background:#f5f5f5;padding:20px;}
+        .search-form{max-width:500px;margin:20px auto;}
+        input{padding:10px;font-size:16px;width:70%;border:1px solid #ddd;}
+        button{padding:10px 20px;background:#333;color:white;border:none;cursor:pointer;}
+        .track{border:1px solid #ddd;margin:10px;padding:15px;border-radius:5px;}
+        a{color:#333;text-decoration:none;font-weight:bold;}
+        .yandex-player {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div style="text-align:center;">
+    <h1>🔍 Найти песню</h1>
+    <form method="GET" class="search-form">
+        <input name="q" value="{{ query }}" placeholder="Например: Queen или Bohemian Rhapsody">
+        <button>Искать</button>
+    </form>
+
+    {% if tracks %}
+    <h3>Найдено: {{ tracks|length }} песен</h3>
+    {% for track in tracks %}
+    <div class="track">
+        <h3>{{ track.artist }} - {{ track.title }}</h3>
+        {% set mins = (track.duration // 60) %}
+        {% set secs = (track.duration % 60) %}
+        <p>{{ track.album }} | {{ mins }}:{{ "%02d"|format(secs) }}</p>
+
+        <iframe class="yandex-player"
+                src="https://music.yandex.ru/iframe/#track/{{ track.id }}/"
+                frameborder="0"
+                allow="autoplay; encrypted-media">
+        </iframe>
+    </div>
+    {% endfor %}
+    {% else %}
+    {% if query %}
+    <p>Ничего не найдено. Попробуйте другой запрос.</p>
+    {% else %}
+    <p>Введите название или исполнителя</p>
+    {% endif %}
+    {% endif %}
+
+    <a href="/index"
+       style="display:inline-block;margin:20px;padding:10px;background:#333;color:white;text-decoration:none;border-radius:5px;">←
+        На главную</a>
+</div>
+</body>
+</html>

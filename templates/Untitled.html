@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация — Караоке</title>
+</head>
+<body>
+    <h2>Регистрация</h2>
+    
+    <form id="registerForm">
+        <div>
+            <label>Имя:</label><br>
+            <input type="text" id="name" placeholder="Ваше имя">
+        </div>
+        
+        <div>
+            <label>Email:</label><br>
+            <input type="email" id="email" placeholder="example@mail.com">
+        </div>
+        
+        <div>
+            <label>Пароль:</label><br>
+            <input type="password" id="password" placeholder="••••••">
+        </div>
+        
+        <div>
+            <label>Повторить пароль:</label><br>
+            <input type="password" id="confirm" placeholder="••••••">
+        </div>
+        
+        <div>
+            <input type="checkbox" id="agree">
+            <label>Согласен с правилами</label>
+        </div>
+        
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+    
+    <p id="message" style="color: green;"></p>
+    
+    <script>
+        document.getElementById('registerForm').onsubmit = function(e) {
+            e.preventDefault();
+            
+            let name = document.getElementById('name').value;
+            let email = document.getElementById('email').value;
+            let pwd = document.getElementById('password').value;
+            let confirm = document.getElementById('confirm').value;
+            let agree = document.getElementById('agree').checked;
+            
+            if (!name || !email || !pwd || !confirm) {
+                alert('Заполните все поля');
+                return;
+            }
+            
+            if (pwd !== confirm) {
+                alert('Пароли не совпадают');
+                return;
+            }
+            
+            if (!agree) {
+                alert('Примите условия');
+                return;
+            }
+            
+            document.getElementById('message').innerHTML = '✅ Добро пожаловать, ' + name + '! (демо)';
+            
+            // очистка формы (опционально)
+            // this.reset();
+        };
+    </script>
+</body>
+</html>

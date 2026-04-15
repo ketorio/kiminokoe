@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ song.title }} - Караоке</title>
+    
+    <!-- ml5.js для определения высоты тона (закомментировано) -->
+    <!-- <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script> -->
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff; 
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+        
+        /* Текст песни */
+        .lyrics-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .prev-line {
+            color: #666;
+            font-size: 22px;
+            margin-bottom: 15px;
+            min-height: 33px;
+            opacity: 0.7;
+        }
+        
+        .current-line {
+            color: #ffd93d;
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            min-height: 63px;
+            text-shadow: 0 0 20px rgba(255,217,61,0.3);
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .next-line {
+            color: #999;
+            font-size: 24px;
+            min-height: 36px;
+            opacity: 0.6;
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,217,61,0.3); }
+            50% { text-shadow: 0 0 30px rgba(255,217,61,0.6); }
+        }
+        
+        /* Кнопки */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-start {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+        }
+        
+        .btn-stop {
+            background: linear-gradient(45deg, #d63031, #e17055);
+            color: white;
+        }
+        
+        .btn-back {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .progress-text {
+            color: #aaa;
+            margin-top: 20px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .timer-display {
+            color: #ffd93d;
+            font-size: 24px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        /* Яндекс.Музыка плеер */
+        .yandex-player-container {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .yandex-player {
+            width: 100%;
+            height: 200px;
+            border: none;
+        }
+        
+        .sync-hint {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ song.title }}</h1>
+        <h2>{{ song.artist }}</h2>
+        
+        <!-- Текст песни -->
+        <div class="lyrics-box">
+            <div class="prev-line" id="prev">✨ Готовы петь? ✨</div>
+            <div class="current-line" id="current">{{ song.lyrics[0] }}</div>
+            <div class="next-line" id="next">{{ song.lyrics[1] if song.lyrics|length > 1 else "..." }}</div>
+        </div>
+        
+        <!-- Таймер -->
+        <div class="timer-display" id="timerDisplay">00:00 / 00:30</div>
+        
+        <!-- Кнопки управления -->
+        <div class="controls">
+            <button class="btn-start" onclick="startKaraoke()">▶ Начать караоке</button>
+            <button class="btn-stop" onclick="stopKaraoke()">⏹ Стоп</button>
+            <button class="btn-back" onclick="window.location.href='/index'">← На главную</button>
+        </div>
+        
+        <div class="progress-text" id="progress">
+            Строка 1 из {{ song.lyrics|length }}
+        </div>
+        
+        <!-- Яндекс.Музыка плеер (внизу) -->
+        <div class="yandex-player-container">
+            <iframe id="yandexPlayer" 
+                    class="yandex-player"
+                    src="https://music.yandex.ru/iframe/#track/{{ song.id }}/?autoplay=0"
+                    frameborder="0"
+                    allow="autoplay; encrypted-media">
+            </iframe>
+        </div>
+        
+        <div class="sync-hint">
+            💡 <strong>Как синхронизировать:</strong> Нажмите Play в плеере, затем сразу нажмите "Начать караоке"
+        </div>
+    </div>
+
+    <div id="song-data" style="display: none;"
+         data-lyrics='{{ song.lyrics | tojson }}'
+         data-timings='{{ song.timings | tojson }}'>
+    </div>
+
+    <script>
+        // Данные песни
+        const songData = document.getElementById('song-data');
+        const lyrics = JSON.parse(songData.dataset.lyrics);
+        const timings = JSON.parse(songData.dataset.timings);
+        
+        // Таймеры
+        let karaokeTimer;
+        let startTime = 0;
+        let isPlaying = false;
+        let currentIndex = 0;
+        
+        /* ===== СЕКЦИЯ ОПРЕДЕЛЕНИЯ ВЫСОТЫ ТОНА ЗАКОММЕНТИРОВАНА =====
+        let pitchDetector;
+        let audioContext;
+        let isMicActive = false;
+        let currentPitch = 0;
+        let score = 0;
+        const targetNotes = [262, 294, 330, 349, 392, 440, 494];
+        
+        async function initPitchDetection() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
+                
+                pitchDetector = ml5.pitchDetection(
+                    'https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/',
+                    audioContext,
+                    stream,
+                    modelLoaded
+                );
+                
+                isMicActive = true;
+                document.getElementById('micBtn').classList.add('active');
+                document.getElementById('micBtn').textContent = '🎤 Микрофон активен';
+                
+            } catch (error) {
+                console.error('Ошибка доступа к микрофону:', error);
+                alert('Не удалось получить доступ к микрофону');
+            }
+        }
+        
+        function modelLoaded() {
+            console.log('Модель загружена!');
+            startPitchDetection();
+        }
+        
+        function startPitchDetection() {
+            if (pitchDetector && isMicActive) {
+                pitchDetector.getPitch((err, frequency) => {
+                    if (err) return;
+                    if (frequency) {
+                        currentPitch = Math.round(frequency);
+                        updatePitchDisplay(currentPitch);
+                        evaluatePitch(currentPitch);
+                    }
+                    if (isMicActive) {
+                        requestAnimationFrame(startPitchDetection);
+                    }
+                });
+            }
+        }
+        
+        function updatePitchDisplay(frequency) {
+            document.getElementById('pitchValue').textContent = frequency + ' Hz';
+            const percent = Math.min(100, Math.max(0, ((frequency - 100) / 400) * 100));
+            document.getElementById('pitchFill').style.width = percent + '%';
+        }
+        
+        function evaluatePitch(frequency) {
+            const closestNote = targetNotes.reduce((prev, curr) => 
+                Math.abs(curr - frequency) < Math.abs(prev - frequency) ? curr : prev
+            );
+            
+            const difference = Math.abs(closestNote - frequency);
+            const feedback = document.getElementById('pitchFeedback');
+            
+            if (difference < 10) {
+                feedback.textContent = '🎯 В точку!';
+                feedback.style.color = '#00b894';
+                if (isPlaying) {
+                    score += 1;
+                    document.getElementById('scoreDisplay').textContent = score;
+                }
+            } else if (difference < 30) {
+                feedback.textContent = frequency > closestNote ? '📈 Чуть выше' : '📉 Чуть ниже';
+                feedback.style.color = '#ffd93d';
+            } else {
+                feedback.textContent = frequency > closestNote ? '⬆️ Выше' : '⬇️ Ниже';
+                feedback.style.color = '#d63031';
+            }
+        }
+        
+        function toggleMicrophone() {
+            if (!isMicActive) {
+                initPitchDetection();
+            } else {
+                if (audioContext) {
+                    audioContext.close();
+                }
+                isMicActive = false;
+                document.getElementById('micBtn').classList.remove('active');
+                document.getElementById('micBtn').textContent = '🎤 Включить микрофон';
+                document.getElementById('pitchValue').textContent = '-- Hz';
+                document.getElementById('pitchFeedback').textContent = '🎤 Пойте!';
+            }
+        }
+        ===== КОНЕЦ ЗАКОММЕНТИРОВАННОЙ СЕКЦИИ ===== */
+        
+        // Управление караоке
+        function startKaraoke() {
+            stopKaraoke();
+            
+            isPlaying = true;
+            startTime = Date.now();
+            currentIndex = 0;
+            updateDisplay(0);
+            
+            // Запускаем таймер синхронизации
+            karaokeTimer = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                updateTimer(elapsed);
+                syncLyrics(elapsed);
+            }, 100);
+        }
+        
+        function stopKaraoke() {
+            if (karaokeTimer) {
+                clearInterval(karaokeTimer);
+                karaokeTimer = null;
+            }
+            isPlaying = false;
+            updateDisplay(0);
+            document.getElementById('timerDisplay').textContent = '00:00 / 00:30';
+        }
+        
+        function updateTimer(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const totalSeconds = timings[timings.length - 1] || 30;
+            const totalMins = Math.floor(totalSeconds / 60);
+            const totalSecs = Math.floor(totalSeconds % 60);
+            document.getElementById('timerDisplay').textContent = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} / ${totalMins.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
+        }
+        
+        function syncLyrics(currentTime) {
+    // Преобразуем интервалы в абсолютное время на лету
+    let absoluteTime = 0;
+    let newIndex = 0;
+    
+    for (let i = 0; i < timings.length; i++) {
+        absoluteTime += timings[i];  // суммируем интервалы
+        if (currentTime >= absoluteTime) {
+            newIndex = i;
+        } else {
+            break;
+        }
+    }
+    
+    if (newIndex !== currentIndex) {
+        currentIndex = newIndex;
+        updateDisplay(currentIndex);
+    }
+}
+        
+        function updateDisplay(index) {
+            const prevEl = document.getElementById('prev');
+            const currEl = document.getElementById('current');
+            const nextEl = document.getElementById('next');
+            const progressEl = document.getElementById('progress');
+            
+            currEl.style.opacity = '0';
+            setTimeout(() => {
+                prevEl.textContent = index > 0 ? lyrics[index - 1] : '🎤 ' + lyrics[0];
+                currEl.textContent = lyrics[index] || '...';
+                nextEl.textContent = index + 1 < lyrics.length ? lyrics[index + 1] : '🎵 Конец! 🎵';
+                currEl.style.opacity = '1';
+                progressEl.textContent = `Строка ${index + 1} из ${lyrics.length}`;
+            }, 150);
+        }
+        
+        // Инициализация
+        updateDisplay(0);
+    </script>
+</body>
+</html>
