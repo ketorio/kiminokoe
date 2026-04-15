@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from text import search_yandex_music  # твоя функция уже возвращает треки с ID!
+from text import search_yandex_music
 import requests
 
 app = Flask(__name__)
 
-# Токен для Яндекс.Музыки
 token = "y0__xDWobbCBxje-AYgpqjy0BZKPE4zJuFhvAP5cwIwgKp-fEOdTg"
 
 def get_preview_url(track_id):
@@ -65,8 +64,7 @@ def search():
     query = request.args.get('q', '')
     tracks = []
     if query:
-        tracks = search_yandex_music(query)  # используем твою функцию
-        # Добавляем информацию о наличии текста
+        tracks = search_yandex_music(query)
         for track in tracks:
             track['has_lyrics'] = str(track['id']) in LYRICS_DB
     return render_template('search.html', tracks=tracks, query=query)
@@ -74,15 +72,12 @@ def search():
 @app.route('/song/<track_id>')
 def song_page(track_id):
     """Страница караоке для конкретной песни"""
-    # Получаем информацию о треке
     track_info = get_track_details(track_id)
     if not track_info:
         return "Песня не найдена", 404
-    
-    # Получаем превью URL
+
     preview_url = get_preview_url(track_id)
-    
-    # Проверяем, есть ли текст в базе
+
     lyrics_data = LYRICS_DB.get(str(track_id), {
         'lyrics': ['Текст песни', 'в процессе', 'добавления...'],
         'timings': [0, 3, 6]
