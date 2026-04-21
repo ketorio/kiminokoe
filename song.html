@@ -262,21 +262,20 @@
 </div>
 
 <script>
-// ---------- Плеер ----------
+    // ---------- Плеер ----------
 const audio = document.getElementById('audio');
 const playBtn = document.getElementById('playBtn');
 const progressBar = document.getElementById('progressBar');
 const progressFill = document.getElementById('progressFill');
 const timeDisplay = document.getElementById('timeDisplay');
-const recordBtn = document.querySelector('.record-btn');
 
 let isPlaying = false;
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
-
-// Распознавание речи
 let recognition = null;
+
+// Инициализация распознавания речи
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -297,13 +296,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     };
 }
 
-// Запись аудио
 async function startRecord() {
-    if (isRecording) {
-        stopRecord();
-        return;
-    }
-
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -315,6 +308,7 @@ async function startRecord() {
         mediaRecorder.onstop = async () => {
             const blob = new Blob(audioChunks, { type: 'audio/webm' });
 
+            // Сохраняем на сервер
             const formData = new FormData();
             formData.append('audio', blob, 'recording.webm');
 
@@ -323,10 +317,9 @@ async function startRecord() {
                 const result = await resp.json();
 
                 if (resp.ok) {
-                    console.log('✅ Запись сохранена:', result.url);
-                    alert('✅ Запись сохранена!');
+                    alert(`✅ Запись сохранена: ${result.url}`);
                 } else {
-                    alert('❌ Ошибка: ' + result.error);
+                    alert(`❌ Ошибка: ${result.error}`);
                 }
             } catch (err) {
                 alert('Ошибка отправки: ' + err);
@@ -342,21 +335,13 @@ async function startRecord() {
 
         if (recognition) {
             recognition.start();
-            document.getElementById('transcriptText').textContent = '🎤 Слушаю...';
         }
 
         console.log('✅ Запись началась');
 
     } catch (err) {
         console.error('❌ Ошибка:', err);
-
-        if (err.name === 'NotAllowedError') {
-            alert('❌ Доступ к микрофону запрещен. Разрешите в настройках браузера.');
-        } else if (err.name === 'NotFoundError') {
-            alert('❌ Микрофон не найден.');
-        } else {
-            alert('❌ Ошибка: ' + err.message);
-        }
+        alert('Ошибка доступа к микрофону: ' + err.message);
     }
 }
 
@@ -374,8 +359,133 @@ function stopRecord() {
         console.log('⏹ Запись остановлена');
     }
 }
+let pitchDetector;
+        let audioContext;
+        let isMicActive = false;
+        let currentPitch = 0;
+        let score = 0;
+        const targetNotes = [262, 294, 330, 349, 392, 440, 494];
 
-// Плеер
+        async function initPitchDetection() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
+                });
+
+                pitchDetector = ml5.pitchDetection(
+                    'https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/',
+                    audioContext,
+                    stream,
+                    modelLoaded
+                );
+
+                isMicActive = true;
+                document.getElementById('micBtn').classList.add('active');
+                document.getElementById('micBtn').textContent = '🎤 Микрофон активен';
+
+            } catch (error) {
+                console.error('Ошибка доступа к микрофону:', error);
+                alert('Не удалось получить доступ к микрофону');
+            }
+        }
+
+        function modelLoaded() {
+            console.log('Модель загружена!');
+            startPitchDetection();
+        }
+
+        function startPitchDetection() {
+            if (pitchDetector && isMicActive) {
+                pitchDetector.getPitch((err, frequency) => {
+                    if (err) return;
+                    if (frequency) {
+                        currentPitch = Math.round(frequency);
+                        updatePitchDisplay(currentPitch);
+                        evaluatePitch(currentPitch);
+                    }
+                    if (isMicActive) {
+                        requestAnimationFrame(startPitchDetection);
+                    }
+                });
+            }
+        }
+
+        function updatePitchDisplay(frequency) {
+            document.getElementById('pitchValue').textContent = frequency + ' Hz';
+            const percent = Math.min(100, Math.max(0, ((frequency - 100) / 400) * 100));
+            document.getElementById('pitchFill').style.width = percent + '%';
+        }
+
+        function evaluatePitch(frequency) {
+            const closestNote = targetNotes.reduce((prev, curr) =>
+                Math.abs(curr - frequency) < Math.abs(prev - frequency) ? curr : prev
+            );
+
+            const difference = Math.abs(closestNote - frequency);
+            const feedback = document.getElementById('pitchFeedback');
+
+            if (difference < 10) {
+                feedback.textContent = '🎯 В точку!';
+                feedback.style.color = '#00b894';
+                if (isPlaying) {
+                    score += 1;
+                    document.getElementById('scoreDisplay').textContent = score;
+                }
+            } else if (difference < 30) {
+                feedback.textContent = frequency > closestNote ? '📈 Чуть выше' : '📉 Чуть ниже';
+                feedback.style.color = '#ffd93d';
+            } else {
+                feedback.textContent = frequency > closestNote ? '⬆️ Выше' : '⬇️ Ниже';
+                feedback.style.color = '#d63031';
+            }
+        }
+
+        function toggleMicrophone() {
+            if (!isMicActive) {
+                initPitchDetection();
+            } else {
+                if (audioContext) {
+                    audioContext.close();
+                }
+                isMicActive = false;
+                document.getElementById('micBtn').classList.remove('active');
+                document.getElementById('micBtn').textContent = '🎤 Включить микрофон';
+                document.getElementById('pitchValue').textContent = '-- Hz';
+                document.getElementById('pitchFeedback').textContent = '🎤 Пойте!';
+            }
+        }
+function updateVolume() {
+    if (!analyser) return;
+    analyser.getByteFrequencyData(dataArray);
+    let sum = 0;
+    for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+    const avg = sum / bufferLength;
+    const percent = Math.min(100, Math.round((avg / 128) * 100));
+
+    // Обновляем иконку
+    const volEl = document.getElementById('volumeIndicator');
+    if (avg < 10) volEl.textContent = '🔇';
+    else if (avg < 40) volEl.textContent = '🔈';
+    else if (avg < 80) volEl.textContent = '🔉';
+    else volEl.textContent = '🔊';
+
+    // Обновляем полоску и процент
+    const bar = document.getElementById('volumeBar');
+    const percentText = document.getElementById('volumePercent');
+    bar.style.width = percent + '%';
+    percentText.textContent = percent + '%';
+
+    // Меняем цвет полоски в зависимости от громкости
+    if (avg < 20) bar.style.background = '#9E9E9E';
+    else if (avg < 50) bar.style.background = '#2196F3';
+    else if (avg < 100) bar.style.background = '#4CAF50';
+    else bar.style.background = '#FF9800';
+}
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -416,40 +526,12 @@ progressBar.onclick = (e) => {
 };
 
 audio.onerror = () => alert('Не удалось загрузить аудио.');
-
-// Прокрутка текста
-function scrollLyrics(delta) {
+    function scrollLyrics(delta) {
     const container = document.getElementById('lyricsContainer');
     if (container) {
         container.scrollBy({ top: delta * 60, behavior: 'smooth' });
     }
 }
-
-// Громкость (простая заглушка, пока нет Web Audio API)
-function updateVolumeIndicator(value) {
-    const volEl = document.getElementById('volumeIndicator');
-    const bar = document.getElementById('volumeBar');
-    const percentText = document.getElementById('volumePercent');
-
-    const percent = Math.min(100, value);
-    bar.style.width = percent + '%';
-    percentText.textContent = percent + '%';
-
-    if (value < 10) volEl.textContent = '🔇';
-    else if (value < 40) volEl.textContent = '🔈';
-    else if (value < 80) volEl.textContent = '🔉';
-    else volEl.textContent = '🔊';
-}
-
-// Заглушка для демонстрации (меняет громкость раз в секунду)
-setInterval(() => {
-    if (isRecording) {
-        const fakeVolume = 30 + Math.random() * 50;
-        updateVolumeIndicator(fakeVolume);
-    } else {
-        updateVolumeIndicator(0);
-    }
-}, 200);
 </script>
 </body>
 </html>
