@@ -1,8 +1,8 @@
+from config import token
 import requests
 
 
 def search_songs(artist):
-    token = "y0__xDWobbCBxje-AYgpqjy0BZKPE4zJuFhvAP5cwIwgKp-fEOdTg"
     response = requests.get("https://api.music.yandex.net/search",
                             headers={'Authorization': f'OAuth {token}'},
                             params={'text': artist, 'type': 'artist', 'page': '0'}).json()

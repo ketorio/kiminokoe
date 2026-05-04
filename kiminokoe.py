@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from text import search_yandex_music
+from findsong import search_yandex_music
 import requests
 
 app = Flask(__name__)
