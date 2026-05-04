@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from text import search_yandex_music
+from findsong import search_yandex_music
 import requests
 
 app = Flask(__name__)
@@ -76,15 +76,15 @@ SONG = {
         "ピーヒャラ ピ お腹がへったよ (ah)"
     ],
     'timings': [
-        10, 3, 3, 3, 
-        4, 4, 4, 4,  
-        2, 2, 2, 3, 2, 1, 1,  
-        1, 2, 2, 2,  
-        2, 2, 2, 2,  
-        2, 2, 1, 2, 1, 2, 1,  
-        1, 1, 1, 
-        1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1
+        10, 1, 1, 1,  # первая строфа
+        1, 1, 2, 2,  # припев
+        2, 3, 3, 3, 2, 1, 1,  # пихьяра
+        1, 2, 2, 2,  # вторая строфа
+        2, 2, 2, 2,  # припев 2
+        2, 2, 1, 2, 1, 2, 1,  # пихьяра 2
+        1, 1, 1,  # мостик
+        1, 1, 1, 1, 1, 1, 1,  # финальный припев
+        1, 1, 1  # концовка
     ]
 }
 
