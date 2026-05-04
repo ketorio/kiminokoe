@@ -1,2 +1,2 @@
-from . import users
-from . import news
+from .users import User
+from .recordings import Recording
