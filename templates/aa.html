@@ -1,5 +1,3 @@
-aa.html
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -77,16 +75,22 @@ aa.html
 <div class="header">
     <div class="logo">🎤 Караоке</div>
     <div class="nav">
-        <a href="#">Главная</a>
-        <a href="#">Песни</a>
-        <a href="#">Регистрация</a>
+        <a href="{{ url_for('index') }}">Главная</a>
+        <a href="{{ url_for('search') }}">Песни</a>
+        {% if session.user_id %}
+            <span style="color: white;">👤 {{ session.username }}</span>
+            <a href="{{ url_for('logout') }}">Выйти</a>
+        {% else %}
+            <a href="{{ url_for('login') }}">Войти</a>
+            <a href="{{ url_for('register') }}">Регистрация</a>
+        {% endif %}
     </div>
 </div>
 
 <div class="main">
     <h1>Пой в караоке</h1>
     <p>Тысячи песен, тексты в такт, записи выступлений</p>
-    <a href="/search" class="btn">Начать петь</a>
+    <a href="{{ url_for('search') }}" class="btn">Начать петь</a>
 </div>
 
 <div class="footer">

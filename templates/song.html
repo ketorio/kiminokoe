@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Караоке - {{ song.title }}</title>
     <style>
+        /* ВСЕ СТИЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -43,44 +44,44 @@
             height: calc(100vh - 120px);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            padding: 40px 20px;
+            padding: 20px 20px 0;
         }
 
         .song-info {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 15px;
         }
 
         .song-title {
-            font-size: 3em;
-            margin-bottom: 10px;
-            color: #333;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 2.5em;
+            margin-bottom: 5px;
         }
 
         .artist {
-            font-size: 1.5em;
+            font-size: 1.2em;
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .lyrics-container {
             flex: 1;
+            width: 100%;
             max-width: 90%;
-            max-height: 60vh;
-            overflow: hidden;
+            max-height: 50vh;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            padding: 10px 0;
+            margin: 10px 0;
         }
 
         .lyrics-line {
-            font-size: 2.8em;
-            line-height: 1.3;
-            margin: 20px 0;
+            font-size: 2em;
+            line-height: 1.2;
+            margin: 10px 0;
             opacity: 0.6;
             color: #666;
             transition: all 0.4s ease;
@@ -88,18 +89,14 @@
         }
 
         .lyrics-line.current {
-            font-size: 3.8em;
+            font-size: 2.5em;
             opacity: 1;
             color: #333;
             text-shadow: 0 0 20px rgba(51,51,51,0.5);
-            transform: scale(1.05);
+            transform: scale(1.02);
             background: rgba(255,255,255,0.8);
-            padding: 15px 30px;
+            padding: 10px 20px;
             border-radius: 10px;
-        }
-
-        .lyrics-line.next {
-            opacity: 0.8;
         }
 
         .controls {
@@ -160,6 +157,16 @@
             display: none;
         }
 
+        #speechBox {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: #fff;
+            border-radius: 10px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
         .footer {
             background: #ddd;
             text-align: center;
@@ -179,12 +186,20 @@
     </style>
 </head>
 <body>
+<!-- ✅ НАВИГАЦИОННАЯ ПОЛОСА ТЕПЕРЬ КАК НА ГЛАВНОЙ -->
 <div class="header">
     <div class="logo">🎤 Караоке</div>
     <div class="nav">
-        <a href="/index">Главная</a>
-        <a href="/search">Песни</a>
-        <a href="/">Регистрация</a>
+        {% if session.user_id %}
+        <a href="{{ url_for('index') }}">Главная</a>
+        <a href="{{ url_for('search') }}">Песни</a>
+        <a href="{{ url_for('list_recordings') }}">Мои записи</a>
+        <span style="color: white;">👤 {{ session.username }}</span>
+        <a href="{{ url_for('logout') }}">Выйти</a>
+        {% else %}
+        <a href="{{ url_for('login') }}">Войти</a>
+        <a href="{{ url_for('register') }}">Регистрация</a>
+        {% endif %}
     </div>
 </div>
 
@@ -193,25 +208,30 @@
         <h1 class="song-title" id="songTitle">{{ song.title }}</h1>
         <p class="artist" id="songArtist">{{ song.artist }}</p>
     </div>
-    <div id="speechBox"
-         style="margin-top:20px; padding:15px; background:#fff; border-radius:10px; max-width:500px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <p style="color:#666; margin-bottom:5px;">🎙️ Вы говорите <span
-                    style="font-size:0.8rem;">(русский + english)</span>:</p>
-            <span id="volumeIndicator" style="font-size:1.2rem;">🔇</span>
+
+    <div id="speechBox">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom:8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="volumeIndicator" style="font-size:1.5rem;">🔇</span>
+                <p style="color:#666; margin:0;">🎙️ Ваш голос:</p>
+            </div>
+            <span id="volumePercent" style="color:#888; font-size:0.9rem;">0%</span>
         </div>
-        <p id="transcriptText" style="font-size:1.5em; min-height:2em; color:#333;">...</p>
+        <div style="position:relative; width:100%; height:12px; background:#eee; border-radius:6px;">
+            <div id="volumeBar"
+                 style="width:0%; height:100%; background:#4CAF50; border-radius:6px; transition: width 0.05s;"></div>
+            <div style="position:absolute; left:30%; width:40%; height:100%; border-left:2px dashed #999; border-right:2px dashed #999; top:0; opacity:0.4;"></div>
+        </div>
+        <p id="transcriptText" style="font-size:1.3em; min-height:1.8em; color:#333; margin:10px 0 0;">...</p>
     </div>
 
     <div class="lyrics-container" id="lyricsContainer">
         {% if lyrics %}
         {% for line in lyrics %}
-        <div class="lyrics-line" data-time="{{ line.time }}">
-            {{ line.text }}
-        </div>
+        <div class="lyrics-line">{{ line }}</div>
         {% endfor %}
         {% else %}
-        <div class="lyrics-line" data-time="0">Текст загружается...</div>
+        <div class="lyrics-line">Текст загружается...</div>
         {% endif %}
     </div>
 
@@ -225,7 +245,7 @@
         <button class="btn" onclick="rewind()" title="С начала">⏮</button>
         <button class="btn" onclick="togglePlay()" id="playBtn" title="Воспроизведение">▶</button>
         <button class="btn" onclick="audio.pause()" title="Пауза">⏸</button>
-        <button class="btn record-btn" onclick="startRecord()" title="Запись голоса">🎤 Запись</button>
+        <button class="btn record-btn" id="recordBtn" title="Запись голоса">🎤 Запись</button>
         <button class="btn" onclick="scrollLyrics(-1)" title="Предыдущая строка">↑</button>
         <button class="btn" onclick="scrollLyrics(1)" title="Следующая строка">↓</button>
         <a href="/search?q={{ query }}" class="btn" title="Другая песня">← Назад</a>
@@ -241,16 +261,40 @@
 </div>
 
 <script>
-    // ---------- Плеер ----------
     const audio = document.getElementById('audio');
     const playBtn = document.getElementById('playBtn');
     const progressBar = document.getElementById('progressBar');
     const progressFill = document.getElementById('progressFill');
     const timeDisplay = document.getElementById('timeDisplay');
     const lines = document.querySelectorAll('.lyrics-line');
+    const recordBtn = document.getElementById('recordBtn');
 
     let isPlaying = false;
     let currentLineIndex = 0;
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    let audioContext;
+    let analyser;
+    let volumeInterval;
+    let recognition = null;
+    let currentStream = null;  // Сохраняем поток, чтобы потом остановить
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'ru-RU';
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('transcriptText').textContent = transcript || '...';
+        };
+    }
 
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
@@ -313,71 +357,20 @@
 
     audio.onerror = () => alert('Не удалось загрузить аудио.');
 
-    // ---------- Запись голоса и распознавание речи ----------
-    let mediaRecorder;
-    let audioChunks = [];
-    let isRecording = false;
-    const recordBtn = document.querySelector('.record-btn');
-    const transcriptEl = document.getElementById('transcriptText');
-    const SAVE_RECORDING = false;  // ← отключаем сохранение на сервер
-
-    // Аудиоконтекст для индикатора громкости
-    let audioContext;
-    let analyser;
-    let volumeInterval;
-
-    // Распознавание речи
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'ru-RU';
-        recognition.maxAlternatives = 1;
-
-        recognition.onresult = (event) => {
-            let interim = '';
-            let final = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    final += transcript + ' ';
-                } else {
-                    interim += transcript;
-                }
-            }
-            transcriptEl.textContent = final || interim || '...';
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Ошибка распознавания:', event.error);
-            transcriptEl.textContent = 'Ошибка распознавания';
-        };
-
-        recognition.onend = () => {
-            if (isRecording) {
-                recognition.start();
-            }
-        };
-    } else {
-        console.warn('Web Speech API не поддерживается');
-    }
-
     async function startRecord() {
         try {
-            // Запрос микрофона с улучшенными настройками
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true,
-                    sampleRate: 48000,
+                    sampleRate: 44100,
                     channelCount: 1
                 }
             });
 
-            // Настройка AudioContext для индикатора громкости
+            currentStream = stream;
+
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const source = audioContext.createMediaStreamSource(stream);
             analyser = audioContext.createAnalyser();
@@ -392,45 +385,75 @@
                 let sum = 0;
                 for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
                 const avg = sum / bufferLength;
+                const percent = Math.min(100, Math.round((avg / 128) * 100));
                 const volEl = document.getElementById('volumeIndicator');
                 if (avg < 10) volEl.textContent = '🔇';
                 else if (avg < 40) volEl.textContent = '🔈';
                 else if (avg < 80) volEl.textContent = '🔉';
                 else volEl.textContent = '🔊';
+                document.getElementById('volumeBar').style.width = percent + '%';
+                document.getElementById('volumePercent').textContent = percent + '%';
             }
             volumeInterval = setInterval(updateVolume, 100);
 
-            // Настройка MediaRecorder
-            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
             audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+            mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) {
+                    audioChunks.push(e.data);
+                }
+            };
+
             mediaRecorder.onstop = async () => {
                 const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(blob);
+                const recordedAudio = document.createElement('audio');
+                recordedAudio.controls = true;
+                recordedAudio.src = audioUrl;
+                recordedAudio.style.width = '100%';
+                recordedAudio.style.marginTop = '10px';
+                const speechBox = document.getElementById('speechBox');
+                const oldAudio = speechBox.querySelector('audio');
+                if (oldAudio) oldAudio.remove();
+                speechBox.appendChild(recordedAudio);
 
-                if (SAVE_RECORDING) {
-                    const formData = new FormData();
-                    formData.append('audio', blob, 'recording.webm');
-                    try {
-                        const resp = await fetch('/record', { method: 'POST', body: formData });
-                        const result = await resp.json();
-                        alert('Запись сохранена: ' + result.filename);
-                    } catch (err) {
-                        alert('Ошибка сохранения: ' + err);
+                // Отправляем на сервер
+                const formData = new FormData();
+                formData.append('audio', blob, 'recording.webm');
+                formData.append('track_id', '{{ song.id }}');
+                formData.append('track_title', '{{ song.title }}');
+                formData.append('track_artist', '{{ song.artist }}');
+
+                try {
+                    const resp = await fetch('/record', { method: 'POST', body: formData });
+                    const result = await resp.json();
+                    console.log('Ответ сервера:', result);
+                    if (resp.ok) {
+                        console.log('✅ Запись сохранена:', result.url);
+                        alert('✅ Запись сохранена!');
+                    } else {
+                        console.error('❌ Ошибка:', result.error);
+                        alert('❌ Ошибка: ' + result.error);
                     }
-                } else {
-                    const audioURL = URL.createObjectURL(blob);
-                    console.log('🔊 Локальная ссылка на запись:', audioURL);
-                    alert('🎤 Запись завершена (без сохранения). Ссылка в консоли.');
+                } catch (err) {
+                    console.error('Ошибка отправки:', err);
+                    alert('Ошибка отправки: ' + err.message);
                 }
 
-                stream.getTracks().forEach(t => t.stop());
+                // Очистка
+                if (currentStream) {
+                    currentStream.getTracks().forEach(t => t.stop());
+                    currentStream = null;
+                }
                 clearInterval(volumeInterval);
-                volumeInterval = null;
                 if (audioContext) {
                     audioContext.close();
                     audioContext = null;
                 }
                 document.getElementById('volumeIndicator').textContent = '🔇';
+                document.getElementById('volumeBar').style.width = '0%';
+                document.getElementById('volumePercent').textContent = '0%';
             };
 
             mediaRecorder.start();
@@ -440,17 +463,11 @@
 
             if (recognition) {
                 recognition.start();
-                transcriptEl.textContent = 'Слушаю...';
-            } else {
-                transcriptEl.textContent = 'Распознавание не поддерживается';
+                document.getElementById('transcriptText').textContent = 'Слушаю...';
             }
         } catch (err) {
-            try {
-                const fallbackStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // ... (можно добавить fallback-логику)
-            } catch (fallbackErr) {
-                alert('Не удалось получить доступ к микрофону: ' + fallbackErr);
-            }
+            alert('Не удалось получить доступ к микрофону: ' + err.message);
+            console.error('Ошибка:', err);
         }
     }
 
@@ -460,9 +477,7 @@
             isRecording = false;
             recordBtn.textContent = '🎤 Запись';
             recordBtn.style.background = '#e74c3c';
-            if (recognition) {
-                recognition.stop();
-            }
+            if (recognition) recognition.stop();
         }
     }
 

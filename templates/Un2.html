@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Караоке - Песня</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #333;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+        .karaoke-screen {
+            height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .song-info {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .song-title {
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .artist {
+            font-size: 1.5em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .lyrics-container {
+            flex: 1;
+            max-width: 90%;
+            max-height: 60vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lyrics-line {
+            font-size: 2.8em;
+            line-height: 1.3;
+            margin: 20px 0;
+            opacity: 0.6;
+            color: #666;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .lyrics-line.current {
+            font-size: 3.8em;
+            opacity: 1;
+            color: #333;
+            text-shadow: 0 0 20px rgba(51,51,51,0.5);
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.8);
+            padding: 15px 30px;
+            border-radius: 10px;
+        }
+
+        .lyrics-line.next {
+            opacity: 0.8;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #333;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 5px;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #444;
+        }
+
+        .record-btn {
+            background: #e74c3c;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .record-btn:hover {
+            background: #c0392b;
+        }
+
+        .progress {
+            width: 100%;
+            max-width: 500px;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #333;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        audio {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px 0;
+            display: none; /* Скрываем стандартный плеер */
+        }
+
+        .footer {
+            background: #ddd;
+            text-align: center;
+
+
+padding: 20px;
+            font-size: 12px;
+            color: #666;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .time-display {
+            color: #666;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">🎤 Караоке</div>
+    <div class="nav">
+        <a href="/index">Главная</a>
+        <a href="/search">Песни</a>
+        <a href="/">Регистрация</a>
+    </div>
+</div>
+
+<div class="karaoke-screen">
+    <div class="song-info">
+        <h1 class="song-title" id="songTitle">{{ song.title }}</h1>
+        <p class="artist" id="songArtist">{{ song.artist }}</p>
+    </div>
+
+    <div class="lyrics-container" id="lyricsContainer">
+        <div class="lyrics-line" data-time="0">Is this the real life?</div>
+        <div class="lyrics-line next" data-time="3">Is this just fantasy?</div>
+        <div class="lyrics-line" data-time="7">Caught in a landslide</div>
+        <div class="lyrics-line" data-time="10">No escape from reality</div>
+        <div class="lyrics-line" data-time="13">Open your eyes</div>
+        <div class="lyrics-line" data-time="15">Look up to the skies and see</div>
+    </div>
+
+    <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+
+    <div class="progress" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="rewind()" title="С начала">⏮</button>
+        <button class="btn" onclick="togglePlay()" id="playBtn" title="Воспроизведение">▶</button>
+        <button class="btn" onclick="audio.pause()" title="Пауза">⏸</button>
+        <button class="btn record-btn" onclick="startRecord()" title="Запись голоса">🎤 Запись</button>
+        <a href="/search?q={{ query }}" class="btn" title="Другая песня">← Назад</a>
+    </div>
+
+    <audio id="audio" preload="auto">
+        <source src="/static/karaoke.mp3" type="audio/mpeg">
+    </audio>
+</div>
+
+<div class="footer">
+    Караоке-приложение
+</div>
+
+<script>
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const lines = document.querySelectorAll('.lyrics-line');
+
+    let isPlaying = false;
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function togglePlay() {
+        if (isPlaying) {
+            audio.pause();
+            playBtn.textContent = '▶';
+            playBtn.title = 'Воспроизведение';
+        } else {
+            audio.play();
+            playBtn.textContent = '⏹';
+            playBtn.title = 'Стоп';
+        }
+        isPlaying = !isPlaying;
+    }
+
+    function rewind() {
+        audio.currentTime = 0;
+    }
+
+    function startRecord() {
+        alert('🎤 Запись голоса активирована!');
+    }
+
+    audio.ontimeupdate = function() {
+        const time = audio.currentTime;
+        const duration = audio.duration || 0;
+        const percent = (time / duration) * 100;
+
+        progressFill.style.width = percent + '%';
+        timeDisplay.textContent = `${formatTime(time)} / ${formatTime(duration)}`;
+
+        lines.forEach((line) => {
+            const lineTime = parseFloat(line.dataset.time);
+            if (Math.abs(time - lineTime) < 2) {
+                line.classList.add('current');
+                line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (time > lineTime + 2) {
+                line.classList.remove('current');
+            } else {
+                line.classList.add('next');
+            }
+        });
+    };
+
+    audio.onloadedmetadata = function() {
+
+
+timeDisplay.textContent = `0:00 / ${formatTime(audio.duration)}`;
+    };
+
+    progressBar.onclick = (e) => {
+        const rect = progressBar.getBoundingClientRect();
+        const pos = (e.clientX - rect.left) / rect.width;
+        audio.currentTime = pos * audio.duration;
+    };
+</script>
+</body>
+</html>
