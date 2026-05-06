@@ -30,15 +30,18 @@
     {% for track in tracks %}
     <div class="track">
         <h3>{{ track.artist }} - {{ track.title }}</h3>
-        {% set mins = (track.duration // 60) %}
-        {% set secs = (track.duration % 60) %}
-        <p>{{ track.album }} | {{ mins }}:{{ "%02d"|format(secs) }}</p>
+        <p>{{ track.album }} | {{ track.duration // 60 }}:{{ "%02d"|format(track.duration % 60) }}</p>
 
         <iframe class="yandex-player"
                 src="https://music.yandex.ru/iframe/#track/{{ track.id }}/"
                 frameborder="0"
                 allow="autoplay; encrypted-media">
         </iframe>
+
+        <a href="/song/{{ track.id }}?title={{ track.title|urlencode }}&artist={{ track.artist|urlencode }}&q={{ query|urlencode }}"
+           class="karaoke-btn">
+            🎤 Петь караоке
+        </a>
     </div>
     {% endfor %}
     {% else %}
