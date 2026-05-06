@@ -1,0 +1,7 @@
+.idea/
+venv/
+__pycache__/
+*.pyc
+*.db
+config.py
+kimi no koe/
